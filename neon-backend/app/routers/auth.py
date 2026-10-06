@@ -1,9 +1,16 @@
 import re
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.database import get_db
 from app.dependencies import create_access_token, get_current_user
-from app.models import LoginRequest, LoginResponse, User
+from app.models import (
+    LoginRequest,
+    LoginResponse,
+    RegisterEmployeeRequest,
+    User,
+    WORKER_ROLES,
+)
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -57,6 +64,62 @@ async def login(body: LoginRequest):
         name=doc["name"],
         role=doc["role"],
         email=doc.get("email"),
+    )
+    token = create_access_token(user)
+    return LoginResponse(access_token=token, user=user)
+
+
+@router.post("/register", response_model=LoginResponse)
+async def register(body: RegisterEmployeeRequest):
+    name = body.name.strip()
+    email = body.email.strip().lower()
+    password = body.password.strip()
+    role = body.role
+
+    if not name:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Full name is required.",
+        )
+    if not email or "@" not in email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A valid email address is required.",
+        )
+    if not password or len(password) < 4:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 4 characters long.",
+        )
+    if role not in WORKER_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role must be one of the predefined employee roles: SCRIPT_WRITER, CONTENT_WRITER, or VIDEO_EDITOR.",
+        )
+
+    db = get_db()
+    existing = await db.users.find_one({"email": {"$regex": f"^{re.escape(email)}$", "$options": "i"}})
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="An employee with this email already exists. Please sign in instead.",
+        )
+
+    user_id = f"u_{uuid.uuid4().hex[:8]}"
+    doc = {
+        "id": user_id,
+        "name": name,
+        "role": role.value,
+        "email": email,
+        "password": password,
+    }
+    await db.users.insert_one(doc)
+
+    user = User(
+        id=user_id,
+        name=name,
+        role=role,
+        email=email,
     )
     token = create_access_token(user)
     return LoginResponse(access_token=token, user=user)

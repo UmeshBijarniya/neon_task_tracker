@@ -32,6 +32,65 @@ async def test_email_password_login_invalid_password(client):
     assert resp.status_code == 401
 
 
+@pytest.mark.asyncio
+async def test_register_new_employee_success_and_login(client):
+    reg_payload = {
+        "name": "Vikram Rathore",
+        "email": "vikram@neonclasses.com",
+        "password": "vikrampass123",
+        "role": "VIDEO_EDITOR",
+    }
+    resp = await client.post("/auth/register", json=reg_payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["access_token"]
+    assert body["user"]["name"] == "Vikram Rathore"
+    assert body["user"]["role"] == "VIDEO_EDITOR"
+    assert body["user"]["email"] == "vikram@neonclasses.com"
+
+    # Verify that the new employee can immediately log in via /auth/login
+    login_resp = await client.post(
+        "/auth/login",
+        json={"email": "vikram@neonclasses.com", "password": "vikrampass123"},
+    )
+    assert login_resp.status_code == 200
+    login_body = login_resp.json()
+    assert login_body["user"]["id"] == body["user"]["id"]
+    assert login_body["user"]["role"] == "VIDEO_EDITOR"
+
+
+@pytest.mark.asyncio
+async def test_register_duplicate_email_fails(client):
+    # Priya's email is already seeded
+    resp = await client.post(
+        "/auth/register",
+        json={
+            "name": "Priya Imposter",
+            "email": "priya@neonclasses.com",
+            "password": "somepass123",
+            "role": "SCRIPT_WRITER",
+        },
+    )
+    assert resp.status_code == 400
+    assert "already exists" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_register_invalid_role_fails(client):
+    # Only predefined worker roles can be registered
+    resp = await client.post(
+        "/auth/register",
+        json={
+            "name": "Fake Admin",
+            "email": "fakeadmin@neonclasses.com",
+            "password": "adminpass123",
+            "role": "ADMIN",
+        },
+    )
+    assert resp.status_code == 400
+
+
+
 
 @pytest.mark.asyncio
 async def test_admin_sees_all_seeded_tasks(client):

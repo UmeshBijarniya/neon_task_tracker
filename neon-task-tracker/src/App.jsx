@@ -25,6 +25,8 @@ import {
   EyeOff,
   Key,
   ArrowRight,
+  User,
+  UserPlus,
 } from "lucide-react";
 
 
@@ -715,11 +717,48 @@ function TaskCard({ task, getUserById, onOpen }) {
 }
 
 /* ---------------------------------------------------------------- */
-/* §0 Sign In Page (Role-Based Authentication & Predefined Accounts) */
+/* §0 Sign In & Employee Registration (Role-Based Authentication)   */
 /* ---------------------------------------------------------------- */
+
+const PREDEFINED_EMPLOYEE_ROLES = [
+  {
+    role: "SCRIPT_WRITER",
+    label: "Script Writer",
+    steps: 4,
+    icon: PenLine,
+    text: "text-violet-300",
+    border: "border-violet-500/40",
+    bg: "bg-violet-950/40",
+    activeBorder: "border-violet-400 bg-violet-950/80 shadow-lg shadow-violet-500/20",
+    desc: "4 steps: outline, draft, review & final approval",
+  },
+  {
+    role: "CONTENT_WRITER",
+    label: "Content Writer",
+    steps: 4,
+    icon: FileText,
+    text: "text-amber-300",
+    border: "border-amber-500/40",
+    bg: "bg-amber-950/40",
+    activeBorder: "border-amber-400 bg-amber-950/80 shadow-lg shadow-amber-500/20",
+    desc: "4 steps: questions, explanations & formatting",
+  },
+  {
+    role: "VIDEO_EDITOR",
+    label: "Video Editor",
+    steps: 5,
+    icon: Film,
+    text: "text-rose-300",
+    border: "border-rose-500/40",
+    bg: "bg-rose-950/40",
+    activeBorder: "border-rose-400 bg-rose-950/80 shadow-lg shadow-rose-500/20",
+    desc: "5 steps: assets, animations, render & export",
+  },
+];
 
 function SignInPage({
   onLogin,
+  onRegister,
   loading,
   error,
   clearError,
@@ -727,16 +766,33 @@ function SignInPage({
   setCustomApiBase,
   onSaveApiBase,
 }) {
+  const [mode, setMode] = useState("login"); // "login" | "register"
+
+  // Login form state
   const [email, setEmail] = useState("admin@neonclasses.com");
   const [password, setPassword] = useState("admin123");
   const [showPassword, setShowPassword] = useState(false);
   const [activePreset, setActivePreset] = useState("admin@neonclasses.com");
+
+  // New Employee Registration state
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regRole, setRegRole] = useState("SCRIPT_WRITER");
+  const [regPassword, setRegPassword] = useState("");
+  const [showRegPassword, setShowRegPassword] = useState(false);
+
   const [showApiConfig, setShowApiConfig] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleLoginSubmit = (e) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) return;
     onLogin(email.trim(), password.trim());
+  };
+
+  const handleRegisterSubmit = (e) => {
+    e.preventDefault();
+    if (!regName.trim() || !regEmail.trim() || !regPassword.trim() || !regRole) return;
+    onRegister(regName.trim(), regEmail.trim(), regPassword.trim(), regRole);
   };
 
   const handleSelectPreset = (acc) => {
@@ -754,6 +810,7 @@ function SignInPage({
   };
 
   const currentApi = getApiBase();
+  const selectedRoleMeta = PREDEFINED_EMPLOYEE_ROLES.find((r) => r.role === regRole) || PREDEFINED_EMPLOYEE_ROLES[0];
 
   return (
     <div className="min-h-screen flex flex-col justify-center items-center bg-neutral-950 text-neutral-100 p-4 sm:p-6 relative overflow-hidden">
@@ -784,8 +841,42 @@ function SignInPage({
           </div>
         </div>
 
-        {/* Login Card */}
+        {/* Auth Card */}
         <div className="w-full bg-neutral-900/90 border border-neutral-800/80 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-5">
+          {/* Mode Switcher Tabs */}
+          <div className="grid grid-cols-2 p-1 rounded-xl bg-neutral-950 border border-neutral-800">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("login");
+                clearError?.();
+              }}
+              className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                mode === "login"
+                  ? "bg-neutral-800 text-cyan-300 shadow-sm"
+                  : "text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <Lock size={13} />
+              <span>Sign In</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMode("register");
+                clearError?.();
+              }}
+              className={`flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-lg transition-all ${
+                mode === "register"
+                  ? "bg-neutral-800 text-violet-300 shadow-sm"
+                  : "text-neutral-400 hover:text-neutral-200"
+              }`}
+            >
+              <UserPlus size={13} />
+              <span>New Employee</span>
+            </button>
+          </div>
+
           {error && (
             <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-950/70 border border-red-800/80 text-red-200 text-xs">
               <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
@@ -796,133 +887,312 @@ function SignInPage({
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    clearError?.();
-                  }}
-                  placeholder="name@neonclasses.com"
-                  className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
-                />
-              </div>
-            </div>
+          {mode === "login" ? (
+            /* Mode 1: Sign In */
+            <>
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        clearError?.();
+                      }}
+                      placeholder="name@neonclasses.com"
+                      className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
+                    />
+                  </div>
+                </div>
 
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
-                Password
-              </label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    clearError?.();
-                  }}
-                  placeholder="••••••••"
-                  className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
-                />
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                        clearError?.();
+                      }}
+                      placeholder="••••••••"
+                      className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-neutral-950 font-bold py-3 text-sm transition-all"
+                  style={{ boxShadow: "0 0 25px rgba(34,211,238,0.3)" }}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Signing in…
+                    </>
+                  ) : (
+                    <>
+                      <span>Sign In</span>
+                      <ArrowRight size={16} />
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Explicit New Employee Login / Register Button */}
+              <div className="pt-1">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                  onClick={() => {
+                    setMode("register");
+                    clearError?.();
+                  }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-700 hover:border-violet-500 bg-neutral-950/60 hover:bg-violet-950/20 text-neutral-300 hover:text-violet-300 font-semibold py-2.5 text-xs transition-all"
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <UserPlus size={14} className="text-violet-400" />
+                  <span>New Employee? Specify Role & Create Password</span>
                 </button>
               </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-neutral-950 font-bold py-3 text-sm transition-all"
-              style={{ boxShadow: "0 0 25px rgba(34,211,238,0.3)" }}
-            >
-              {loading ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" /> Signing in…
-                </>
-              ) : (
-                <>
-                  <span>Sign In</span>
-                  <ArrowRight size={16} />
-                </>
-              )}
-            </button>
-          </form>
+              {/* Predefined Accounts Section */}
+              <div className="pt-3 border-t border-neutral-800/80 space-y-2.5">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Key size={13} className="text-cyan-400" /> Predefined Accounts
+                  </span>
+                  <span className="text-[11px] text-neutral-500">1-click autofill & login</span>
+                </div>
 
-          {/* Predefined Accounts Section */}
-          <div className="pt-3 border-t border-neutral-800/80 space-y-2.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Key size={13} className="text-cyan-400" /> Predefined Accounts
-              </span>
-              <span className="text-[11px] text-neutral-500">1-click autofill & login</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {PREDEFINED_ACCOUNTS.map((acc) => {
-                const Icon = acc.icon;
-                const isSelected = activePreset === acc.email;
-                return (
-                  <div
-                    key={acc.email}
-                    onClick={() => handleSelectPreset(acc)}
-                    className={`cursor-pointer rounded-xl border p-2.5 transition-all text-left flex flex-col justify-between ${
-                      isSelected
-                        ? `${acc.border} bg-neutral-950 shadow-md`
-                        : "border-neutral-800 bg-neutral-950/60 hover:border-neutral-700"
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-1 mb-1">
-                      <span className="flex items-center gap-1.5 text-xs font-semibold">
-                        <Icon size={13} className={acc.text} />
-                        <span className={acc.text}>{acc.label}</span>
-                      </span>
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-mono">
-                        {acc.redirectUrl}
-                      </span>
-                    </div>
-
-                    <div className="text-[11px] text-neutral-200 font-medium truncate">
-                      {acc.name}
-                    </div>
-                    <div className="text-[10px] text-neutral-500 font-mono truncate">
-                      {acc.email}
-                    </div>
-
-                    <div className="mt-2 pt-1.5 border-t border-neutral-800/60 flex items-center justify-between">
-                      <span className="text-[10px] text-neutral-500 font-mono">
-                        pw: <span className="text-neutral-400">{acc.password}</span>
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleQuickLogin(acc);
-                        }}
-                        className="text-[10px] font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {PREDEFINED_ACCOUNTS.map((acc) => {
+                    const Icon = acc.icon;
+                    const isSelected = activePreset === acc.email;
+                    return (
+                      <div
+                        key={acc.email}
+                        onClick={() => handleSelectPreset(acc)}
+                        className={`cursor-pointer rounded-xl border p-2.5 transition-all text-left flex flex-col justify-between ${
+                          isSelected
+                            ? `${acc.border} bg-neutral-950 shadow-md`
+                            : "border-neutral-800 bg-neutral-950/60 hover:border-neutral-700"
+                        }`}
                       >
-                        Quick Login <ChevronRight size={11} />
-                      </button>
-                    </div>
+                        <div className="flex items-start justify-between gap-1 mb-1">
+                          <span className="flex items-center gap-1.5 text-xs font-semibold">
+                            <Icon size={13} className={acc.text} />
+                            <span className={acc.text}>{acc.label}</span>
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-mono">
+                            {acc.redirectUrl}
+                          </span>
+                        </div>
+
+                        <div className="text-[11px] text-neutral-200 font-medium truncate">
+                          {acc.name}
+                        </div>
+                        <div className="text-[10px] text-neutral-500 font-mono truncate">
+                          {acc.email}
+                        </div>
+
+                        <div className="mt-2 pt-1.5 border-t border-neutral-800/60 flex items-center justify-between">
+                          <span className="text-[10px] text-neutral-500 font-mono">
+                            pw: <span className="text-neutral-400">{acc.password}</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickLogin(acc);
+                            }}
+                            className="text-[10px] font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
+                          >
+                            Quick Login <ChevronRight size={11} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Mode 2: New Employee Registration & Login */
+            <form onSubmit={handleRegisterSubmit} className="space-y-4">
+              <div className="p-3 rounded-xl bg-violet-950/30 border border-violet-900/40 text-xs text-neutral-300 flex items-start gap-2.5">
+                <Sparkles size={16} className="text-violet-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-semibold text-violet-300">New Employee Setup</div>
+                  <div className="text-neutral-400 text-[11px]">
+                    Specify your name, email, pick your predefined role, and create a password. You will be automatically redirected to your Employee Workspace (<code>#/employee</code>).
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="text"
+                    required
+                    value={regName}
+                    onChange={(e) => {
+                      setRegName(e.target.value);
+                      clearError?.();
+                    }}
+                    placeholder="e.g. Vikram Rathore"
+                    className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Work Email Address
+                </label>
+                <div className="relative">
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type="email"
+                    required
+                    value={regEmail}
+                    onChange={(e) => {
+                      setRegEmail(e.target.value);
+                      clearError?.();
+                    }}
+                    placeholder="e.g. vikram@neonclasses.com"
+                    className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-2">
+                  Select Predefined Role
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {PREDEFINED_EMPLOYEE_ROLES.map((r) => {
+                    const Icon = r.icon;
+                    const isSelected = regRole === r.role;
+                    return (
+                      <div
+                        key={r.role}
+                        onClick={() => setRegRole(r.role)}
+                        className={`cursor-pointer rounded-xl border p-3 transition-all flex items-center justify-between ${
+                          isSelected
+                            ? `${r.activeBorder} bg-neutral-950`
+                            : "border-neutral-800 bg-neutral-950/60 hover:border-neutral-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-lg bg-neutral-900 border border-neutral-800 ${r.text}`}>
+                            <Icon size={16} />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold ${r.text}`}>{r.label}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-900 text-neutral-400 border border-neutral-800">
+                                {r.steps} steps workflow
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-neutral-400 mt-0.5">{r.desc}</div>
+                          </div>
+                        </div>
+
+                        <div className="shrink-0 pl-2">
+                          <div
+                            className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                              isSelected ? "border-violet-400 bg-violet-500 text-neutral-950" : "border-neutral-700 bg-neutral-900"
+                            }`}
+                          >
+                            {isSelected && <CheckCircle2 size={12} />}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                  Create Password
+                </label>
+                <div className="relative">
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    type={showRegPassword ? "text" : "password"}
+                    required
+                    minLength={4}
+                    value={regPassword}
+                    onChange={(e) => {
+                      setRegPassword(e.target.value);
+                      clearError?.();
+                    }}
+                    placeholder="Create your secure password (min 4 characters)"
+                    className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-violet-400 focus:ring-1 focus:ring-violet-400 outline-none transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                  >
+                    {showRegPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-60 text-white font-bold py-3 text-sm transition-all shadow-lg shadow-violet-600/30"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" /> Creating Account & Logging In…
+                  </>
+                ) : (
+                  <>
+                    <span>Register & Sign In as {selectedRoleMeta.label}</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+
+              <div className="pt-2 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMode("login");
+                    clearError?.();
+                  }}
+                  className="text-xs text-neutral-400 hover:text-neutral-200 transition-colors"
+                >
+                  Already have an account? <span className="text-cyan-400 font-semibold underline">Sign In Here</span>
+                </button>
+              </div>
+            </form>
+          )}
 
           {/* API settings toggle */}
           <div className="pt-1 text-center">
@@ -1078,40 +1348,44 @@ export default function App() {
     }
   };
 
-  /* Switch or authenticate as any seeded user (for Admin profile switcher) */
-  const loginAs = useCallback(
-    async (userId) => {
+  const handleRegister = async (name, email, password, role) => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const { access_token, user } = await apiFetch("/auth/register", null, {
+        method: "POST",
+        body: JSON.stringify({ name, email, password, role }),
+      });
       try {
-        const { access_token, user } = await apiFetch(`/auth/switch-user/${userId}`, null, {
-          method: "POST",
-        });
-        try {
-          localStorage.setItem("neon_auth_token", access_token);
-          localStorage.setItem("neon_auth_user", JSON.stringify(user));
-        } catch {
-          // ignore
-        }
-        setToken(access_token);
-        setMe(user);
-        setDetailId(null);
-        setShowCreate(false);
-
-        const targetHash = user.role === "ADMIN" ? "#/admin" : "#/employee";
-        window.location.hash = targetHash;
-
-        await fetchTasks(access_token);
-        pushToast(
-          "info",
-          "Switched Profile",
-          `Now acting as ${user.name} (${ROLE_META[user.role]?.label || user.role})`
-        );
-        return access_token;
-      } catch (e) {
-        pushToast("error", "Switch failed", e.message);
+        localStorage.setItem("neon_auth_token", access_token);
+        localStorage.setItem("neon_auth_user", JSON.stringify(user));
+      } catch {
+        // ignore
       }
-    },
-    [fetchTasks, pushToast]
-  );
+      setToken(access_token);
+      setMe(user);
+
+      window.location.hash = "#/employee";
+
+      const [taskList, userList] = await Promise.all([
+        apiFetch("/tasks", access_token),
+        apiFetch("/users", access_token),
+      ]);
+      setTasks(taskList);
+      setUsers(userList);
+      setFatalError(null);
+
+      pushToast(
+        "success",
+        `Welcome to Neon Classes, ${user.name}!`,
+        `Registered as ${ROLE_META[user.role]?.label || user.role}. Employee Workspace active (#/employee)`
+      );
+    } catch (e) {
+      setAuthError(e.message || "Registration failed. Please check your inputs.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     const savedToken = token || localStorage.getItem("neon_auth_token");
@@ -1226,11 +1500,6 @@ export default function App() {
       setLoading(false);
     }
   };
-
-  const switchUser = async (id) => {
-    await loginAs(id);
-  };
-
 
   const createTask = async (title, description, assignments) => {
     setCreating(true);
@@ -1371,6 +1640,7 @@ export default function App() {
       <>
         <SignInPage
           onLogin={handleLogin}
+          onRegister={handleRegister}
           loading={authLoading}
           error={authError}
           clearError={() => setAuthError(null)}
@@ -1620,38 +1890,6 @@ export default function App() {
                     </div>
                   </section>
                 )}
-
-                {/* §3 Demo Role Switcher (calls /auth/switch-user) */}
-                <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-                    <h2 className="text-xs font-semibold uppercase tracking-widest text-neutral-400">
-                      Demo · Switch Profile
-                    </h2>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {users.map((u) => {
-                      const active = u.id === me?.id;
-                      const m = ROLE_META[u.role] || ROLE_META.ADMIN;
-                      const Icon = m.icon;
-                      return (
-                        <button
-                          key={u.id}
-                          onClick={() => switchUser(u.id)}
-                          className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition-colors ${
-                            active
-                              ? `${m.bg} ${m.border} ${m.text}`
-                              : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:border-neutral-600 hover:text-neutral-200"
-                          }`}
-                        >
-                          <Icon size={14} />
-                          <span className="font-medium">{u.name}</span>
-                          <span className="hidden sm:inline text-xs opacity-70">· {m.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
 
                 {/* Dashboard Stats */}
                 <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">

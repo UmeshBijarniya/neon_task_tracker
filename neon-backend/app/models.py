@@ -68,6 +68,13 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class RegisterEmployeeRequest(BaseModel):
+    name: str
+    email: str
+    password: str
+    role: Role
+
+
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

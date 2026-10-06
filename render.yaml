@@ -1,0 +1,37 @@
+# Render Blueprint Specification for Neon Classes Task Tracker
+# https://render.com/docs/blueprint-spec
+
+services:
+  # 1. FastAPI Backend
+  - type: web
+    name: neon-backend
+    runtime: docker
+    dockerfilePath: ./neon-backend/Dockerfile
+    dockerContext: ./neon-backend
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: MONGO_URL
+        sync: false # Set this in Render dashboard to your MongoDB connection string (e.g. MongoDB Atlas)
+      - key: DB_NAME
+        value: neon_classes
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGINS
+        value: "*"
+
+  # 2. React Frontend (Static Site on Global CDN)
+  - type: web
+    name: neon-frontend
+    runtime: static
+    rootDir: neon-task-tracker
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_BASE
+        sync: false # Set to https://<your-neon-backend-name>.onrender.com once backend is deployed

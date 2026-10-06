@@ -1,0 +1,20 @@
+# Environment variables
+.env
+*.env.local
+
+# Python
+neon-backend/.venv/
+neon-backend/__pycache__/
+neon-backend/.pytest_cache/
+*.pyc
+*.pyo
+
+# Node / Frontend
+neon-task-tracker/node_modules/
+neon-task-tracker/dist/
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

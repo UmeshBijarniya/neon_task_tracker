@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  # 1. MongoDB Database
+  mongo:
+    image: mongo:7
+    container_name: neon-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: ${DB_NAME:-neon_classes}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - neon-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. FastAPI Backend
+  backend:
+    build:
+      context: ./neon-backend
+      dockerfile: Dockerfile
+    container_name: neon-backend
+    restart: unless-stopped
+    environment:
+      - MONGO_URL=${MONGO_URL:-mongodb://mongo:27017}
+      - DB_NAME=${DB_NAME:-neon_classes}
+      - JWT_SECRET=${JWT_SECRET:-neon-classes-production-secret-change-me}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - neon-network
+
+  # 3. React Frontend + Nginx Reverse Proxy
+  frontend:
+    build:
+      context: ./neon-task-tracker
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_BASE=${VITE_API_BASE:-}
+    container_name: neon-frontend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - neon-network
+
+volumes:
+  mongo_data:
+    driver: local
+
+networks:
+  neon-network:
+    driver: bridge

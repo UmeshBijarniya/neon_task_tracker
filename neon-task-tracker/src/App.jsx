@@ -34,10 +34,16 @@ import {
   §8 Notifications ... Real-time feedback toasts, automatic DONE status on 13/13 completion
 */
 
-const rawApiBase = import.meta.env.VITE_API_BASE !== undefined
-  ? import.meta.env.VITE_API_BASE
-  : "http://localhost:8000";
-const API_BASE = rawApiBase ? rawApiBase.replace(/\/+$/, "") : "";
+function getApiBase() {
+  if (typeof window !== "undefined") {
+    const saved = localStorage.getItem("NEON_API_BASE");
+    if (saved) return saved.replace(/\/+$/, "");
+  }
+  const rawApiBase = import.meta.env.VITE_API_BASE !== undefined
+    ? import.meta.env.VITE_API_BASE
+    : "http://localhost:8000";
+  return rawApiBase ? rawApiBase.replace(/\/+$/, "") : "";
+}
 
 /* ---------------------------------------------------------------- */
 /* UI-only Constants & Metadata                                     */
@@ -105,8 +111,10 @@ const STATUS_META = {
 /* ---------------------------------------------------------------- */
 
 async function apiFetch(path, token, options = {}) {
-  const url = `${API_BASE}${path}`;
+  const base = getApiBase();
+  const url = `${base}${path}`;
   const res = await fetch(url, {
+
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -655,8 +663,10 @@ export default function App() {
   const [creating, setCreating] = useState(false);
   const [busyStepId, setBusyStepId] = useState(null);
   const [fatalError, setFatalError] = useState(null);
+  const [customApiBase, setCustomApiBase] = useState(() => getApiBase());
 
   const isAdmin = me?.role === "ADMIN";
+
   const getUserById = useCallback((id) => users.find((u) => u.id === id), [users]);
 
   const pushToast = useCallback((type, title, msg) => {
@@ -828,29 +838,62 @@ export default function App() {
   }
 
   if (fatalError) {
+    const currentBase = getApiBase();
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-neutral-950 text-neutral-300 gap-4 px-6 text-center">
         <div className="p-3 bg-red-950 border border-red-800 rounded-full text-red-400">
           <AlertCircle size={32} />
         </div>
         <div className="text-lg font-bold">Couldn't reach the backend</div>
-        <div className="text-sm text-neutral-500 max-w-md">{fatalError}</div>
-        <div className="text-xs text-neutral-600 bg-neutral-900 border border-neutral-800 p-3 rounded-xl max-w-md">
-          Make sure MongoDB is running and start the backend:
-          <code className="block text-cyan-400 mt-1 font-mono">
-            uvicorn app.main:app --reload --port 8000
-          </code>
+        <div className="text-sm text-neutral-400 max-w-md">{fatalError}</div>
+
+        <div className="text-xs text-neutral-400 bg-neutral-900 border border-neutral-800 p-3 rounded-xl max-w-md w-full text-left space-y-1">
+          <div>Currently targeting: <span className="font-mono text-cyan-400">{currentBase || "(relative)"}</span></div>
+          {currentBase.includes("localhost") && (
+            <div className="text-amber-400 mt-1">
+              ⚠️ The frontend is targeting <code>localhost:8000</code>. On Render, set your backend URL below or in Render's environment variables.
+            </div>
+          )}
         </div>
+
+        <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 p-3 rounded-xl flex flex-col gap-2">
+          <label className="text-xs text-neutral-400 text-left font-medium">
+            Backend URL (Render):
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customApiBase}
+              onChange={(e) => setCustomApiBase(e.target.value)}
+              placeholder="https://neon-backend-xxxx.onrender.com"
+              className="flex-1 bg-neutral-950 border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-100 font-mono focus:border-cyan-400 outline-none"
+            />
+            <button
+              onClick={() => {
+                if (customApiBase) {
+                  localStorage.setItem("NEON_API_BASE", customApiBase.trim());
+                } else {
+                  localStorage.removeItem("NEON_API_BASE");
+                }
+                handleRetry();
+              }}
+              className="bg-cyan-500 hover:bg-cyan-400 text-neutral-950 font-semibold px-3 py-1.5 rounded-lg text-xs transition-colors shrink-0"
+            >
+              Save & Connect
+            </button>
+          </div>
+        </div>
+
         <button
           onClick={handleRetry}
-          className="mt-2 flex items-center gap-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 px-4 py-2 text-sm font-semibold text-neutral-950 transition-colors shadow-lg"
-          style={{ boxShadow: "0 0 20px rgba(34,211,238,0.25)" }}
+          className="mt-1 flex items-center gap-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 px-4 py-2 text-sm font-semibold text-neutral-200 transition-colors"
         >
           <RefreshCw size={15} /> Retry Connection
         </button>
       </div>
     );
   }
+
 
   return (
     <div

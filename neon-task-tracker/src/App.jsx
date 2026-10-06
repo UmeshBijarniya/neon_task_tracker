@@ -19,7 +19,14 @@ import {
   ClipboardList,
   Loader2,
   RefreshCw,
+  LogOut,
+  Mail,
+  Eye,
+  EyeOff,
+  Key,
+  ArrowRight,
 } from "lucide-react";
+
 
 /*
   NEON CLASSES — TASK TRACKER (Wired to FastAPI Backend)
@@ -105,6 +112,70 @@ const STATUS_META = {
     dot: "bg-emerald-400",
   },
 };
+
+const PREDEFINED_ACCOUNTS = [
+  {
+    role: "ADMIN",
+    label: "Admin",
+    name: "Raja Sir",
+    email: "admin@neonclasses.com",
+    password: "admin123",
+    badge: "Admin Access",
+    tagline: "Full access to all tasks, team members & assignments",
+    redirectUrl: "#/admin",
+    icon: Shield,
+    border: "border-cyan-500/40 hover:border-cyan-400",
+    bg: "bg-cyan-950/40",
+    text: "text-cyan-300",
+    accent: "bg-cyan-500",
+  },
+  {
+    role: "SCRIPT_WRITER",
+    label: "Script Writer",
+    name: "Priya Sharma",
+    email: "priya@neonclasses.com",
+    password: "priya123",
+    badge: "Employee",
+    tagline: "4 sequential steps: outline, draft, review & final approval",
+    redirectUrl: "#/employee",
+    icon: PenLine,
+    border: "border-violet-500/40 hover:border-violet-400",
+    bg: "bg-violet-950/40",
+    text: "text-violet-300",
+    accent: "bg-violet-500",
+  },
+  {
+    role: "CONTENT_WRITER",
+    label: "Content Writer",
+    name: "Neha Gupta",
+    email: "neha@neonclasses.com",
+    password: "neha123",
+    badge: "Employee",
+    tagline: "4 sequential steps: questions, explanations & formatting",
+    redirectUrl: "#/employee",
+    icon: FileText,
+    border: "border-amber-500/40 hover:border-amber-400",
+    bg: "bg-amber-950/40",
+    text: "text-amber-300",
+    accent: "bg-amber-500",
+  },
+  {
+    role: "VIDEO_EDITOR",
+    label: "Video Editor",
+    name: "Karan Singh",
+    email: "karan@neonclasses.com",
+    password: "karan123",
+    badge: "Employee",
+    tagline: "5 sequential steps: assets, animation, render & export",
+    redirectUrl: "#/employee",
+    icon: Film,
+    border: "border-rose-500/40 hover:border-rose-400",
+    bg: "bg-rose-950/40",
+    text: "text-rose-300",
+    accent: "bg-rose-500",
+  },
+];
+
 
 /* ---------------------------------------------------------------- */
 /* API Client Helper                                                */
@@ -644,15 +715,282 @@ function TaskCard({ task, getUserById, onOpen }) {
 }
 
 /* ---------------------------------------------------------------- */
+/* §0 Sign In Page (Role-Based Authentication & Predefined Accounts) */
+/* ---------------------------------------------------------------- */
+
+function SignInPage({
+  onLogin,
+  loading,
+  error,
+  clearError,
+  customApiBase,
+  setCustomApiBase,
+  onSaveApiBase,
+}) {
+  const [email, setEmail] = useState("admin@neonclasses.com");
+  const [password, setPassword] = useState("admin123");
+  const [showPassword, setShowPassword] = useState(false);
+  const [activePreset, setActivePreset] = useState("admin@neonclasses.com");
+  const [showApiConfig, setShowApiConfig] = useState(false);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) return;
+    onLogin(email.trim(), password.trim());
+  };
+
+  const handleSelectPreset = (acc) => {
+    setActivePreset(acc.email);
+    setEmail(acc.email);
+    setPassword(acc.password);
+    clearError?.();
+  };
+
+  const handleQuickLogin = (acc) => {
+    setActivePreset(acc.email);
+    setEmail(acc.email);
+    setPassword(acc.password);
+    onLogin(acc.email, acc.password);
+  };
+
+  const currentApi = getApiBase();
+
+  return (
+    <div className="min-h-screen flex flex-col justify-center items-center bg-neutral-950 text-neutral-100 p-4 sm:p-6 relative overflow-hidden">
+      {/* Background ambient lighting */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[350px] bg-cyan-500/10 rounded-full blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[450px] h-[300px] bg-violet-500/10 rounded-full blur-[130px] pointer-events-none" />
+
+      <div className="w-full max-w-lg z-10 flex flex-col items-center">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <div
+            className="h-14 w-14 rounded-2xl bg-cyan-500 text-neutral-950 flex items-center justify-center mb-3 shadow-2xl"
+            style={{ boxShadow: "0 0 35px rgba(34,211,238,0.45)" }}
+          >
+            <Zap size={28} strokeWidth={2.5} />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            NEON CLASSES
+          </h1>
+          <p className="text-xs sm:text-sm text-neutral-400 mt-1 max-w-sm">
+            Production Task Tracker & 13-Step Workflow Automation
+          </p>
+          <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 rounded-full bg-neutral-900 border border-neutral-800 text-[11px] text-neutral-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span>
+              Role-Based Routing: <strong>Admin</strong> redirects to <code className="text-cyan-300">#/admin</code> · <strong>Employee</strong> to <code className="text-violet-300">#/employee</code>
+            </span>
+          </div>
+        </div>
+
+        {/* Login Card */}
+        <div className="w-full bg-neutral-900/90 border border-neutral-800/80 rounded-2xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-5">
+          {error && (
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-red-950/70 border border-red-800/80 text-red-200 text-xs">
+              <AlertCircle size={16} className="text-red-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold text-red-300">Authentication Failed</div>
+                <div>{error}</div>
+              </div>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                Email Address
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    clearError?.();
+                  }}
+                  placeholder="name@neonclasses.com"
+                  className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-3.5 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-400 mb-1.5">
+                Password
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    clearError?.();
+                  }}
+                  placeholder="••••••••"
+                  className="w-full bg-neutral-950 border border-neutral-700/80 rounded-xl pl-10 pr-10 py-2.5 text-sm text-neutral-100 placeholder-neutral-600 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 outline-none transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300"
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full mt-2 flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-60 text-neutral-950 font-bold py-3 text-sm transition-all"
+              style={{ boxShadow: "0 0 25px rgba(34,211,238,0.3)" }}
+            >
+              {loading ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" /> Signing in…
+                </>
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Predefined Accounts Section */}
+          <div className="pt-3 border-t border-neutral-800/80 space-y-2.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Key size={13} className="text-cyan-400" /> Predefined Accounts
+              </span>
+              <span className="text-[11px] text-neutral-500">1-click autofill & login</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {PREDEFINED_ACCOUNTS.map((acc) => {
+                const Icon = acc.icon;
+                const isSelected = activePreset === acc.email;
+                return (
+                  <div
+                    key={acc.email}
+                    onClick={() => handleSelectPreset(acc)}
+                    className={`cursor-pointer rounded-xl border p-2.5 transition-all text-left flex flex-col justify-between ${
+                      isSelected
+                        ? `${acc.border} bg-neutral-950 shadow-md`
+                        : "border-neutral-800 bg-neutral-950/60 hover:border-neutral-700"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-1 mb-1">
+                      <span className="flex items-center gap-1.5 text-xs font-semibold">
+                        <Icon size={13} className={acc.text} />
+                        <span className={acc.text}>{acc.label}</span>
+                      </span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-neutral-800 text-neutral-400 font-mono">
+                        {acc.redirectUrl}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-neutral-200 font-medium truncate">
+                      {acc.name}
+                    </div>
+                    <div className="text-[10px] text-neutral-500 font-mono truncate">
+                      {acc.email}
+                    </div>
+
+                    <div className="mt-2 pt-1.5 border-t border-neutral-800/60 flex items-center justify-between">
+                      <span className="text-[10px] text-neutral-500 font-mono">
+                        pw: <span className="text-neutral-400">{acc.password}</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleQuickLogin(acc);
+                        }}
+                        className="text-[10px] font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
+                      >
+                        Quick Login <ChevronRight size={11} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* API settings toggle */}
+          <div className="pt-1 text-center">
+            <button
+              type="button"
+              onClick={() => setShowApiConfig(!showApiConfig)}
+              className="text-[11px] text-neutral-500 hover:text-neutral-300 transition-colors"
+            >
+              {showApiConfig ? "Hide API configuration" : `Connected to API: ${currentApi || "(relative)"} ⚙️`}
+            </button>
+
+            {showApiConfig && (
+              <div className="mt-2 p-3 bg-neutral-950 rounded-xl border border-neutral-800 text-left space-y-2">
+                <label className="text-[11px] text-neutral-400 font-medium">Backend API URL:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customApiBase}
+                    onChange={(e) => setCustomApiBase(e.target.value)}
+                    placeholder="https://neon-backend-xxxx.onrender.com"
+                    className="flex-1 bg-neutral-900 border border-neutral-700 rounded-lg px-2.5 py-1.5 text-xs text-neutral-100 font-mono outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={onSaveApiBase}
+                    className="bg-cyan-500 hover:bg-cyan-400 text-neutral-950 text-xs font-semibold px-2.5 py-1.5 rounded-lg"
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-5 text-center text-xs text-neutral-600">
+          Neon Classes Task Tracker · RBAC Sequential Production Pipeline
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- */
 /* Main Application Component                                       */
 /* ---------------------------------------------------------------- */
 
 let toastCounter = 0;
 const generateToastId = () => `toast_${++toastCounter}_${Date.now()}`;
 
+
 export default function App() {
-  const [token, setToken] = useState(null);
-  const [me, setMe] = useState(null);
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem("neon_auth_token") || null;
+    } catch {
+      return null;
+    }
+  });
+  const [me, setMe] = useState(() => {
+    try {
+      const s = localStorage.getItem("neon_auth_user");
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  });
   const [users, setUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [view, setView] = useState("dashboard");
@@ -664,6 +1002,8 @@ export default function App() {
   const [busyStepId, setBusyStepId] = useState(null);
   const [fatalError, setFatalError] = useState(null);
   const [customApiBase, setCustomApiBase] = useState(() => getApiBase());
+  const [authError, setAuthError] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
 
   const isAdmin = me?.role === "ADMIN";
 
@@ -680,65 +1020,200 @@ export default function App() {
     setTasks(data);
   }, []);
 
-  /* Switch or authenticate as any seeded user */
-  const loginAs = useCallback(
-    async (userId) => {
-      const { access_token, user } = await apiFetch(`/auth/switch-user/${userId}`, null, {
+  const handleLogout = useCallback(() => {
+    try {
+      localStorage.removeItem("neon_auth_token");
+      localStorage.removeItem("neon_auth_user");
+    } catch {
+      // ignore
+    }
+    setToken(null);
+    setMe(null);
+    setTasks([]);
+    setDetailId(null);
+    setShowCreate(false);
+    window.location.hash = "#/login";
+    pushToast("info", "Signed out", "You have returned to the sign in page.");
+  }, [pushToast]);
+
+  const handleLogin = async (email, password) => {
+    setAuthLoading(true);
+    setAuthError(null);
+    try {
+      const { access_token, user } = await apiFetch("/auth/login", null, {
         method: "POST",
+        body: JSON.stringify({ email, password }),
       });
+      try {
+        localStorage.setItem("neon_auth_token", access_token);
+        localStorage.setItem("neon_auth_user", JSON.stringify(user));
+      } catch {
+        // ignore
+      }
       setToken(access_token);
       setMe(user);
-      setDetailId(null);
-      setShowCreate(false);
-      await fetchTasks(access_token);
-      return access_token;
+
+      const targetHash = user.role === "ADMIN" ? "#/admin" : "#/employee";
+      window.location.hash = targetHash;
+
+      const [taskList, userList] = await Promise.all([
+        apiFetch("/tasks", access_token),
+        apiFetch("/users", access_token),
+      ]);
+      setTasks(taskList);
+      setUsers(userList);
+      setFatalError(null);
+
+      pushToast(
+        "success",
+        `Welcome, ${user.name}!`,
+        user.role === "ADMIN"
+          ? "Admin Portal active (#/admin)"
+          : `Employee Workspace active (#/employee)`
+      );
+    } catch (e) {
+      setAuthError(e.message || "Invalid email or password.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  /* Switch or authenticate as any seeded user (for Admin profile switcher) */
+  const loginAs = useCallback(
+    async (userId) => {
+      try {
+        const { access_token, user } = await apiFetch(`/auth/switch-user/${userId}`, null, {
+          method: "POST",
+        });
+        try {
+          localStorage.setItem("neon_auth_token", access_token);
+          localStorage.setItem("neon_auth_user", JSON.stringify(user));
+        } catch {
+          // ignore
+        }
+        setToken(access_token);
+        setMe(user);
+        setDetailId(null);
+        setShowCreate(false);
+
+        const targetHash = user.role === "ADMIN" ? "#/admin" : "#/employee";
+        window.location.hash = targetHash;
+
+        await fetchTasks(access_token);
+        pushToast(
+          "info",
+          "Switched Profile",
+          `Now acting as ${user.name} (${ROLE_META[user.role]?.label || user.role})`
+        );
+        return access_token;
+      } catch (e) {
+        pushToast("error", "Switch failed", e.message);
+      }
     },
-    [fetchTasks]
+    [fetchTasks, pushToast]
   );
 
   const loadData = useCallback(async () => {
-    const { access_token, user } = await apiFetch("/auth/switch-user/u1", null, {
-      method: "POST",
-    });
-    setToken(access_token);
-    setMe(user);
+    const savedToken = token || localStorage.getItem("neon_auth_token");
+    if (!savedToken) return;
     const [taskList, userList] = await Promise.all([
-      apiFetch("/tasks", access_token),
-      apiFetch("/users", access_token),
+      apiFetch("/tasks", savedToken),
+      apiFetch("/users", savedToken),
     ]);
     setTasks(taskList);
     setUsers(userList);
     setFatalError(null);
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     let ignore = false;
-    (async () => {
+    const init = async () => {
+      let savedToken = null;
+      let savedUser = null;
       try {
-        const { access_token, user } = await apiFetch("/auth/switch-user/u1", null, {
-          method: "POST",
-        });
-        if (ignore) return;
-        setToken(access_token);
-        setMe(user);
+        savedToken = localStorage.getItem("neon_auth_token");
+        savedUser = localStorage.getItem("neon_auth_user");
+      } catch {
+        // ignore
+      }
+
+      if (!savedToken || !savedUser) {
+        setToken(null);
+        setMe(null);
+        setLoading(false);
+        if (window.location.hash !== "#/login") {
+          window.location.hash = "#/login";
+        }
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(savedUser);
+        setToken(savedToken);
+        setMe(parsed);
+
+        const targetHash = parsed.role === "ADMIN" ? "#/admin" : "#/employee";
+        if (!window.location.hash || window.location.hash === "#/login") {
+          window.location.hash = targetHash;
+        }
+
         const [taskList, userList] = await Promise.all([
-          apiFetch("/tasks", access_token),
-          apiFetch("/users", access_token),
+          apiFetch("/tasks", savedToken),
+          apiFetch("/users", savedToken),
         ]);
         if (ignore) return;
         setTasks(taskList);
         setUsers(userList);
         setFatalError(null);
       } catch (e) {
-        if (!ignore) setFatalError(e.message || "Couldn't reach the backend.");
+        if (ignore) return;
+        if (e.status === 401 || e.status === 403) {
+          try {
+            localStorage.removeItem("neon_auth_token");
+            localStorage.removeItem("neon_auth_user");
+          } catch {
+            // ignore
+          }
+          setToken(null);
+          setMe(null);
+          window.location.hash = "#/login";
+        } else {
+          setFatalError(e.message || "Couldn't reach the backend.");
+        }
       } finally {
         if (!ignore) setLoading(false);
       }
-    })();
+    };
+
+    init();
     return () => {
       ignore = true;
     };
   }, []);
+
+  useEffect(() => {
+    const onHash = () => {
+      const h = window.location.hash;
+      if (!token || !me) {
+        if (h !== "#/login") {
+          window.location.hash = "#/login";
+        }
+      } else {
+        if (h === "#/login") {
+          window.location.hash = me.role === "ADMIN" ? "#/admin" : "#/employee";
+        } else if (h === "#/admin" && me.role !== "ADMIN") {
+          pushToast(
+            "error",
+            "Access Denied",
+            "Employees do not have access to the Admin Portal. Redirected to Employee Workspace."
+          );
+          window.location.hash = "#/employee";
+        }
+      }
+    };
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, [token, me, pushToast]);
 
   const handleRetry = async () => {
     setLoading(true);
@@ -753,12 +1228,9 @@ export default function App() {
   };
 
   const switchUser = async (id) => {
-    try {
-      await loginAs(id);
-    } catch (e) {
-      pushToast("error", "Couldn't switch user", e.message);
-    }
+    await loginAs(id);
   };
+
 
   const createTask = async (title, description, assignments) => {
     setCreating(true);
@@ -894,6 +1366,29 @@ export default function App() {
     );
   }
 
+  if (!token || !me) {
+    return (
+      <>
+        <SignInPage
+          onLogin={handleLogin}
+          loading={authLoading}
+          error={authError}
+          clearError={() => setAuthError(null)}
+          customApiBase={customApiBase}
+          setCustomApiBase={setCustomApiBase}
+          onSaveApiBase={() => {
+            if (customApiBase) {
+              localStorage.setItem("NEON_API_BASE", customApiBase.trim());
+            } else {
+              localStorage.removeItem("NEON_API_BASE");
+            }
+            pushToast("info", "Saved API Base", `Now targeting ${customApiBase || "(relative)"}`);
+          }}
+        />
+        <ToastStack toasts={toasts} />
+      </>
+    );
+  }
 
   return (
     <div
@@ -962,8 +1457,26 @@ export default function App() {
           })}
         </div>
 
-        <div className="mt-auto p-5 text-xs text-neutral-600">
-          Neon Universe Pvt. Ltd. · Jaipur
+        <div className="mt-auto p-4 border-t border-neutral-800 space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-neutral-500 font-mono text-[11px]">
+              {isAdmin ? "#/admin" : "#/employee"}
+            </span>
+            <span
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${ROLE_META[me?.role]?.border} ${ROLE_META[me?.role]?.bg} ${ROLE_META[me?.role]?.text}`}
+            >
+              {ROLE_META[me?.role]?.label}
+            </span>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center justify-center gap-2 rounded-xl bg-neutral-900 hover:bg-red-950/40 border border-neutral-800 hover:border-red-800/80 text-neutral-400 hover:text-red-300 px-3 py-2 text-xs font-semibold transition-all"
+          >
+            <LogOut size={14} /> Sign Out
+          </button>
+          <div className="text-[10px] text-neutral-600 text-center">
+            Neon Universe Pvt. Ltd. · Jaipur
+          </div>
         </div>
       </aside>
 
@@ -1026,6 +1539,23 @@ export default function App() {
                 </div>
               </div>
             </div>
+
+            <div className="hidden lg:flex items-center px-2.5 py-1 rounded-lg bg-neutral-900 border border-neutral-800 text-[11px] font-mono">
+              {isAdmin ? (
+                <span className="text-cyan-400 font-semibold">#/admin</span>
+              ) : (
+                <span className="text-violet-400 font-semibold">#/employee</span>
+              )}
+            </div>
+
+            <button
+              onClick={handleLogout}
+              title="Sign Out"
+              className="flex items-center gap-1.5 rounded-lg border border-neutral-800 bg-neutral-900 hover:bg-red-950/40 hover:border-red-800/80 text-neutral-400 hover:text-red-300 px-3 py-2 text-xs font-semibold transition-all"
+            >
+              <LogOut size={15} />
+              <span className="hidden sm:inline">Sign Out</span>
+            </button>
           </div>
         </header>
 
@@ -1034,6 +1564,63 @@ export default function App() {
           <div className="max-w-5xl mx-auto px-4 md:px-8 py-6 space-y-6">
             {view === "dashboard" ? (
               <>
+                {/* Role-Specific Workspace Banner */}
+                {isAdmin ? (
+                  <section className="rounded-2xl border border-cyan-900/50 bg-gradient-to-r from-cyan-950/30 via-neutral-900 to-neutral-900 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="h-11 w-11 rounded-xl bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 flex items-center justify-center shrink-0">
+                        <Shield size={22} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base font-bold text-neutral-100">
+                            Admin Production Portal
+                          </h2>
+                          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
+                            #/admin
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                          Full system control: create tasks, assign roles, and oversee all 13-step production pipelines.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowCreate(true)}
+                      className="flex items-center gap-1.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-neutral-950 text-xs sm:text-sm font-bold px-4 py-2.5 transition-colors shadow-lg shadow-cyan-500/20 shrink-0"
+                    >
+                      <Plus size={16} /> Create New Task
+                    </button>
+                  </section>
+                ) : (
+                  <section className="rounded-2xl border border-violet-900/50 bg-gradient-to-r from-violet-950/30 via-neutral-900 to-neutral-900 p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="h-11 w-11 rounded-xl bg-violet-500/20 border border-violet-500/30 text-violet-300 flex items-center justify-center shrink-0">
+                        {(() => {
+                          const Icon = ROLE_META[me?.role]?.icon || PenLine;
+                          return <Icon size={22} />;
+                        })()}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base font-bold text-neutral-100">
+                            {ROLE_META[me?.role]?.label} Workspace
+                          </h2>
+                          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-violet-950 text-violet-300 border border-violet-800">
+                            #/employee
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                          Welcome back, <strong className="text-neutral-200">{me?.name}</strong>! Showing only tasks assigned to your role ({tasks.length} active).
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-xs text-neutral-400 bg-neutral-950/80 border border-neutral-800 px-3 py-2 rounded-xl shrink-0">
+                      Sequential RBAC: only complete your step when previous steps are done.
+                    </div>
+                  </section>
+                )}
+
                 {/* §3 Demo Role Switcher (calls /auth/switch-user) */}
                 <section className="rounded-2xl border border-neutral-800 bg-neutral-900 p-4">
                   <div className="flex items-center gap-2 mb-3">

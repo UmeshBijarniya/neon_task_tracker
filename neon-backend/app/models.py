@@ -32,6 +32,7 @@ class User(BaseModel):
     id: str
     name: str
     role: Role
+    email: Optional[str] = None
 
 
 class TaskStep(BaseModel):
@@ -62,6 +63,11 @@ class CreateTaskRequest(BaseModel):
     assignments: dict[Role, str]  # must contain all 3 WORKER_ROLES
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
 class LoginResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -70,3 +76,4 @@ class LoginResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     detail: str
+

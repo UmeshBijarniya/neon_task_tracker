@@ -4,15 +4,63 @@ from datetime import datetime, timedelta, timezone
 from app.models import Role, StepStatus, Task, TaskStatus, TaskStep, User, WORKER_ROLES
 from app.workflows import WORKFLOWS
 
-USERS: list[User] = [
-    User(id="u1", name="Raja Sir", role=Role.ADMIN),
-    User(id="u2", name="Priya Sharma", role=Role.SCRIPT_WRITER),
-    User(id="u3", name="Aman Verma", role=Role.SCRIPT_WRITER),
-    User(id="u4", name="Neha Gupta", role=Role.CONTENT_WRITER),
-    User(id="u5", name="Rohit Jain", role=Role.CONTENT_WRITER),
-    User(id="u6", name="Karan Singh", role=Role.VIDEO_EDITOR),
-    User(id="u7", name="Divya Meena", role=Role.VIDEO_EDITOR),
+USERS_SEED = [
+    {
+        "id": "u1",
+        "name": "Raja Sir",
+        "role": Role.ADMIN.value,
+        "email": "admin@neonclasses.com",
+        "password": "admin123",
+    },
+    {
+        "id": "u2",
+        "name": "Priya Sharma",
+        "role": Role.SCRIPT_WRITER.value,
+        "email": "priya@neonclasses.com",
+        "password": "priya123",
+    },
+    {
+        "id": "u3",
+        "name": "Aman Verma",
+        "role": Role.SCRIPT_WRITER.value,
+        "email": "aman@neonclasses.com",
+        "password": "aman123",
+    },
+    {
+        "id": "u4",
+        "name": "Neha Gupta",
+        "role": Role.CONTENT_WRITER.value,
+        "email": "neha@neonclasses.com",
+        "password": "neha123",
+    },
+    {
+        "id": "u5",
+        "name": "Rohit Jain",
+        "role": Role.CONTENT_WRITER.value,
+        "email": "rohit@neonclasses.com",
+        "password": "rohit123",
+    },
+    {
+        "id": "u6",
+        "name": "Karan Singh",
+        "role": Role.VIDEO_EDITOR.value,
+        "email": "karan@neonclasses.com",
+        "password": "karan123",
+    },
+    {
+        "id": "u7",
+        "name": "Divya Meena",
+        "role": Role.VIDEO_EDITOR.value,
+        "email": "divya@neonclasses.com",
+        "password": "divya123",
+    },
 ]
+
+USERS: list[User] = [
+    User(id=u["id"], name=u["name"], role=Role(u["role"]), email=u["email"])
+    for u in USERS_SEED
+]
+
 
 
 def _ago(hours: float) -> datetime:
@@ -102,17 +150,25 @@ def seed_tasks() -> list[Task]:
 
 
 async def seed_db(db):
-    """Idempotent: seeds initial data and creates indexes."""
+    """Idempotent: seeds initial data, updates emails/passwords, and creates indexes."""
     try:
         await db.users.create_index("id", unique=True)
+        await db.users.create_index("email", sparse=True)
         await db.users.create_index("role")
         await db.tasks.create_index("id", unique=True)
         await db.tasks.create_index("createdAt")
     except Exception:
         pass  # In tests or read-only DB, skip index creation
 
-    if await db.users.count_documents({}) == 0:
-        await db.users.insert_many([u.model_dump() for u in USERS])
+    # Upsert each user so existing Atlas/Mongo collections get email and password
+    for u in USERS_SEED:
+        await db.users.update_one(
+            {"id": u["id"]},
+            {"$set": u},
+            upsert=True,
+        )
+
     if await db.tasks.count_documents({}) == 0:
         await db.tasks.insert_many([t.model_dump() for t in seed_tasks()])
+
 

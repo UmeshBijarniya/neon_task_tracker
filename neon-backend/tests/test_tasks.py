@@ -18,6 +18,22 @@ async def test_login_returns_token_and_user(client):
 
 
 @pytest.mark.asyncio
+async def test_email_password_login_success(client):
+    resp = await client.post("/auth/login", json={"email": "admin@neonclasses.com", "password": "admin123"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["user"]["role"] == "ADMIN"
+    assert body["access_token"]
+
+
+@pytest.mark.asyncio
+async def test_email_password_login_invalid_password(client):
+    resp = await client.post("/auth/login", json={"email": "admin@neonclasses.com", "password": "wrong"})
+    assert resp.status_code == 401
+
+
+
+@pytest.mark.asyncio
 async def test_admin_sees_all_seeded_tasks(client):
     headers = await login_as(client, ADMIN)
     resp = await client.get("/tasks", headers=headers)

@@ -16,5 +16,6 @@ async def list_users(
 ):
     db = get_db()
     query = {"role": role.value} if role else {}
-    docs = await db.users.find(query).to_list(length=None)
+    docs = await db.users.find(query, {"password": 0}).to_list(length=None)
     return [User(**d) for d in docs]
+

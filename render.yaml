@@ -27,7 +27,6 @@ services:
     rootDir: neon-task-tracker
     buildCommand: npm install && npm run build
     staticPublishPath: dist
-    plan: free
     routes:
       - type: rewrite
         source: /*

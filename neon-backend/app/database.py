@@ -15,13 +15,21 @@ def get_db():
     """
     global _client, _db
     if _db is None:
-        client_kwargs = {}
+        client_kwargs = {
+            "maxPoolSize": 50,
+            "minPoolSize": 5,
+            "maxIdleTimeMS": 45000,
+            "serverSelectionTimeoutMS": 10000,
+            "connectTimeoutMS": 10000,
+            "socketTimeoutMS": 20000,
+        }
         if "mongodb+srv://" in MONGO_URL or "ssl=true" in MONGO_URL.lower() or "tls=true" in MONGO_URL.lower():
             client_kwargs["tlsCAFile"] = certifi.where()
 
         _client = AsyncIOMotorClient(MONGO_URL, **client_kwargs)
         _db = _client[DB_NAME]
     return _db
+
 
 
 

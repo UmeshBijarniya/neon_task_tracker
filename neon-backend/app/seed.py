@@ -102,8 +102,17 @@ def seed_tasks() -> list[Task]:
 
 
 async def seed_db(db):
-    """Idempotent: only seeds if collections are empty."""
+    """Idempotent: seeds initial data and creates indexes."""
+    try:
+        await db.users.create_index("id", unique=True)
+        await db.users.create_index("role")
+        await db.tasks.create_index("id", unique=True)
+        await db.tasks.create_index("createdAt")
+    except Exception:
+        pass  # In tests or read-only DB, skip index creation
+
     if await db.users.count_documents({}) == 0:
         await db.users.insert_many([u.model_dump() for u in USERS])
     if await db.tasks.count_documents({}) == 0:
         await db.tasks.insert_many([t.model_dump() for t in seed_tasks()])
+

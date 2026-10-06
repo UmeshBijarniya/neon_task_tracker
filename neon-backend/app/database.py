@@ -1,3 +1,4 @@
+import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from app.config import DB_NAME, MONGO_URL
@@ -14,9 +15,14 @@ def get_db():
     """
     global _client, _db
     if _db is None:
-        _client = AsyncIOMotorClient(MONGO_URL)
+        client_kwargs = {}
+        if "mongodb+srv://" in MONGO_URL or "ssl=true" in MONGO_URL.lower() or "tls=true" in MONGO_URL.lower():
+            client_kwargs["tlsCAFile"] = certifi.where()
+
+        _client = AsyncIOMotorClient(MONGO_URL, **client_kwargs)
         _db = _client[DB_NAME]
     return _db
+
 
 
 def set_db(db):
